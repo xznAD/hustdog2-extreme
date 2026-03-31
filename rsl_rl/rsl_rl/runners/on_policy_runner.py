@@ -33,7 +33,7 @@ import os
 from collections import deque
 import statistics
 
-# from torch.utils.tensorboard import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.optim as optim
 import wandb
@@ -129,8 +129,8 @@ class OnPolicyRunner:
         priv_reg_coef = 0.
         entropy_coef = 0.
         # initialize writer
-        # if self.log_dir is not None and self.writer is None:
-        #     self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
+        if self.log_dir is not None and self.writer is None:
+            self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
         obs = self.env.get_observations()
@@ -219,6 +219,8 @@ class OnPolicyRunner:
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
 
     def learn_vision(self, num_learning_iterations, init_at_random_ep_len=False):
+        if self.log_dir is not None and self.writer is None:
+            self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
         tot_iter = self.current_learning_iteration + num_learning_iterations
         self.start_learning_iteration = copy(self.current_learning_iteration)
 
@@ -359,6 +361,13 @@ class OnPolicyRunner:
         
         wandb.log(wandb_dict, step=locs['it'])
 
+        if self.writer is not None:
+            for key, value in wandb_dict.items():
+                if isinstance(value, (int, float)):
+                    self.writer.add_scalar(key, value, locs['it'])
+                elif isinstance(value, torch.Tensor) and value.numel() == 1:
+                    self.writer.add_scalar(key, value.item(), locs['it'])
+
         str = f" \033[1m Learning iteration {locs['it']}/{self.current_learning_iteration + locs['num_learning_iterations']} \033[0m "
 
         if len(locs['rewbuffer']) > 0:
@@ -437,6 +446,12 @@ class OnPolicyRunner:
             # wandb_dict['Train/mean_episode_length/time', statistics.mean(locs['lenbuffer']), self.tot_time)
 
         wandb.log(wandb_dict, step=locs['it'])
+        if self.writer is not None:
+            for key, value in wandb_dict.items():
+                if isinstance(value, (int, float)):
+                    self.writer.add_scalar(key, value, locs['it'])
+                elif isinstance(value, torch.Tensor) and value.numel() == 1:
+                    self.writer.add_scalar(key, value.item(), locs['it'])
 
         str = f" \033[1m Learning iteration {locs['it']}/{self.current_learning_iteration + locs['num_learning_iterations']} \033[0m "
 

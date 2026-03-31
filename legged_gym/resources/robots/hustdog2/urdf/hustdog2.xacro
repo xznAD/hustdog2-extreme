@@ -1,0 +1,157 @@
+<?xml version="1.0"?>
+
+<robot name="hustdog2" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:arg name="DEBUG" default="false"/>
+
+    <xacro:include filename="const.xacro"/>
+    <xacro:include filename="materials.xacro"/>
+    <!-- use explicit per-leg definitions that match hustdog2.urdf -->
+    <xacro:include filename="legnew.xacro"/>
+    <!-- include transmissions so gazebo_ros_control registers effort joints -->
+    <!-- <xacro:include filename="transmissions.xacro"/> -->
+    <!-- <xacro:include filename="stairs.xacro"/> -->
+    <!-- <xacro:include filename="gazebo.xacro"/> -->
+    <xacro:include filename="depthCamera.xacro"/>
+    <xacro:include filename="ultraSound.xacro"/>
+    <!-- <xacro:include filename="$(find go1_gazebo)/launch/stairs.urdf.xacro"/> -->
+
+    <!-- Debug mode will hung up the robot, use "true" or "false" to switch it. -->
+    <xacro:if value="$(arg DEBUG)">
+        <link name="world"/>
+        <joint name="base_static_joint" type="fixed">
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <parent link="world"/>
+            <child link="base_link"/>
+        </joint>
+    </xacro:if>
+
+    <link name="base_link">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.001 0.001 0.001"/>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint name="base_link_to_trunk" type="fixed">
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <parent link="base_link"/>
+        <child link="trunk"/>
+    </joint>
+
+    <link name="trunk">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/trunk.STL" scale="1 1 1"/>
+            </geometry>
+            <!-- <material name="orange"/> -->
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="${trunk_com_x} ${trunk_com_y} ${trunk_com_z}"/>
+            <geometry>
+                <box size="${trunk_length} ${trunk_width} ${trunk_height}"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <origin rpy="0 0 0" xyz="${trunk_com_x} ${trunk_com_y} ${trunk_com_z}"/>
+            <mass value="${trunk_mass}"/>
+            <inertia
+                ixx="${trunk_ixx}" ixy="${trunk_ixy}" ixz="${trunk_ixz}"
+                iyy="${trunk_iyy}" iyz="${trunk_iyz}"
+                izz="${trunk_izz}"/>  
+        </inertial>
+    </link>
+    
+    <!-- LIDAR (aligned to hustdog2.urdf) -->
+    <link name="LIDAR">
+        <inertial>
+            <origin xyz="0.000199578579167744 5.56978729826113E-06 0.0930321007689041" rpy="0 0 0"/>
+            <mass value="0.141887346048767"/>
+            <inertia ixx="4.17977400205789E-05" ixy="-5.52625156952412E-09" ixz="-3.05328898604069E-07" iyy="4.50773279990884E-05" iyz="4.39725037239413E-10" izz="6.87998253582212E-05"/>
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <mesh filename="../meshes/LIDAR.STL" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <origin xyz="0.000199578579167744 5.56978729826113E-06 0.0930321007689041" rpy="0 0 0"/>
+            <geometry>
+                <cylinder length="0.04" radius="0.035"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="LIDAR" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="trunk"/>
+        <child link="LIDAR"/>
+    </joint>
+
+    <joint name="imu_joint" type="fixed">
+        <parent link="trunk"/>
+        <child link="imu_link"/>
+        <origin rpy="0 0 0" xyz="-0.01592 -0.06659 -0.00617"/>
+    </joint>
+
+    <link name="imu_link">
+        <inertial>
+            <mass value="0.001"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+        </inertial>
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size="0.001 0.001 0.001"/>
+            </geometry>
+            <!-- <material name="red"/> -->
+        </visual>
+        <collision>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <box size=".001 .001 .001"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- instantiate explicit per-leg macros (match hustdog2.urdf) -->
+    <xacro:leg_FR/>
+    <xacro:leg_FL/>
+    <xacro:leg_RR/>
+    <xacro:leg_RL/>
+
+    <!-- Replaced five depthCamera instances with the single CAMERA link from hustdog2.urdf -->
+    <xacro:depthCamera camID="1" name="CAMERA" 
+        xyz="${camera_offset_x} ${camera_offset_y} ${camera_offset_z}" 
+        visual_xyz="${-camera_offset_x} ${-camera_offset_y} ${-camera_offset_z}">
+    </xacro:depthCamera>
+
+    <!-- <joint name="camera_laserscan_joint_left" type="fixed">
+        <origin rpy="0 0.2618 0" xyz="0 0 0"/>
+        <parent link="camera_CAMERA"/>
+        <child link="camera_laserscan_link_left"/>
+    </joint>
+
+    <link name="camera_laserscan_link_left">
+    </link> -->
+<!-- 
+    <joint name="camera_laserscan_joint_right" type="fixed">
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <parent link="camera_CAMERA"/>
+        <child link="camera_laserscan_link_right"/>
+    </joint>
+
+    <link name="camera_laserscan_link_right">
+    </link> -->
+
+    <!-- <xacro:ultraSound name="left" origin_rpy="0 0.2618 ${PI/2}" origin_xyz="-0.0535  0.0826 0.00868"/>
+
+    <xacro:ultraSound name="right" origin_rpy="0 0.2618 ${-PI/2}" origin_xyz="-0.0535 -0.0826 0.00868"/>
+
+    <xacro:ultraSound name="face" origin_rpy="0 0 0" origin_xyz="0.2747 0.0 -0.0088"/> -->
+</robot>

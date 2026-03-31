@@ -1,0 +1,506 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- legnew.xacro: explicit per-leg definitions matching hustdog2.urdf values
+       Each macro creates links/joints for one leg (hip -> thigh -> calf -> foot)
+       Uses properties defined in const.xacro (hip_mass, hip_com_x, hip_link_length, thigh_length, calf_length, etc.)
+  -->
+
+  <xacro:macro name="leg_FR" params="">
+
+    <!-- FR hip joint (from trunk to FR_hip) -->
+    <joint name="FR_hip_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="0.1666 -0.051996 0.052"/>
+      <parent link="trunk"/>
+      <child link="FR_hip"/>
+      <axis xyz="1 0 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${hip_lower}" upper="${hip_upper}" effort="${hip_effort}" velocity="${hip_velocity}"/>
+    </joint>
+
+    <link name="FR_hip">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/FR_hip.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 ${PI/2.0} 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="${hip_length}" radius="${hip_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${hip_com_x} ${hip_com_y} ${hip_com_z}"/>
+        <mass value="${hip_mass}"/>
+        <inertia ixx="${hip_ixx}" ixy="${hip_ixy}" ixz="${hip_ixz}" iyy="${hip_iyy}" iyz="${hip_iyz}" izz="${hip_izz}"/>
+      </inertial>
+    </link>
+
+    <!-- FR thigh joint (hip -> thigh) -->
+    <joint name="FR_thigh_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="0.072 0 0"/>
+      <parent link="FR_hip"/>
+      <child link="FR_thigh"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${thigh_lower}" upper="${thigh_upper}" effort="${thigh_effort}" velocity="${thigh_velocity}"/>
+    </joint>
+
+    <link name="FR_thigh">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/FR_thigh.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="${PI/2.0} 0 0" xyz="${thigh_com_x} ${thigh_com_y} ${thigh_com_z+0.065}"/>
+        <geometry>
+          <cylinder length="${thigh_shoulder_length}" radius="${thigh_shoulder_radius}"/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin rpy="0 0 0" xyz="${thigh_com_x} ${thigh_com_y} ${thigh_com_z}"/>
+        <geometry>
+          <box size="${thigh_width} ${thigh_height} ${calf_link_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${thigh_com_x} ${thigh_com_y} ${thigh_com_z}"/>
+        <mass value="${thigh_mass}"/>
+        <inertia ixx="${thigh_ixx}" ixy="${thigh_ixy}" ixz="${thigh_ixz}" iyy="${thigh_iyy}" iyz="${thigh_iyz}" izz="${thigh_izz}"/>
+      </inertial>
+    </link>
+
+    <!-- FR calf joint (thigh -> calf) -->
+    <joint name="FR_calf_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="0 0 -0.22"/>
+      <parent link="FR_thigh"/>
+      <child link="FR_calf"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${calf_lower}" upper="${calf_upper}" effort="${calf_effort}" velocity="${calf_velocity}"/>
+    </joint>
+
+    <link name="FR_calf">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/FR_calf.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="${calf_com_x} ${calf_com_y} ${calf_com_z}"/>
+        <geometry>
+          <box size="${calf_width} ${calf_height} ${calf_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${calf_com_x} ${calf_com_y} ${calf_com_z}"/>
+        <mass value="${calf_mass}"/>
+        <inertia ixx="${calf_ixx}" ixy="${calf_ixy}" ixz="${calf_ixz}" iyy="${calf_iyy}" iyz="${calf_iyz}" izz="${calf_izz}"/>
+      </inertial>
+    </link>
+
+    <!-- FR foot -->
+    <joint name="FR_foot_fixed" type="fixed">
+      <origin rpy="0 0 0" xyz="-0.029484 0 -0.19799"/>
+      <parent link="FR_calf"/>
+      <child link="FR_foot"/>
+    </joint>
+    <link name="FR_foot">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/FR_foot.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.004 -0.085 -0.003"/>
+        <geometry>
+          <sphere radius="${foot_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${foot_com_x} ${foot_com_y} ${foot_com_z}"/>
+        <mass value="${foot_mass}"/>
+        <inertia ixx="${foot_ixx}" ixy="${foot_ixy}" ixz="${foot_ixz}" iyy="${foot_iyy}" iyz="${foot_iyz}" izz="${foot_izz}"/>
+      </inertial>
+    </link>
+
+  </xacro:macro>
+
+  <!-- FL: mirror across Y axis (positive y) -->
+  <xacro:macro name="leg_FL" params="">
+    <!-- FL hip -->
+    <joint name="FL_hip_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="0.1666 0.051996 0.052"/>
+      <parent link="trunk"/>
+      <child link="FL_hip"/>
+      <axis xyz="1 0 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${hip_lower}" upper="${hip_upper}" effort="${hip_effort}" velocity="${hip_velocity}"/>
+    </joint>
+
+    <link name="FL_hip">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/FL_hip.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 ${PI/2.0} 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="${hip_length}" radius="${hip_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${hip_com_x} ${-hip_com_y} ${hip_com_z}"/>
+        <mass value="${hip_mass}"/>
+        <inertia ixx="${hip_ixx}" ixy="${hip_ixy}" ixz="${hip_ixz}" iyy="${hip_iyy}" iyz="${hip_iyz}" izz="${hip_izz}"/>
+      </inertial>
+    </link>
+
+    <!-- thigh -->
+    <joint name="FL_thigh_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="0.072 0 0"/>
+      <parent link="FL_hip"/>
+      <child link="FL_thigh"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${thigh_lower}" upper="${thigh_upper}" effort="${thigh_effort}" velocity="${thigh_velocity}"/>
+    </joint>
+
+    <link name="FL_thigh">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/FL_thigh.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="${PI/2.0} 0 0" xyz="${thigh_com_x} ${-thigh_com_y} ${thigh_com_z+0.065}"/>
+        <geometry>
+          <cylinder length="${thigh_shoulder_length}" radius="${thigh_shoulder_radius}"/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin rpy="0 0 0" xyz="${thigh_com_x} ${-thigh_com_y} ${thigh_com_z}"/>
+        <geometry>
+          <box size="${thigh_width} ${thigh_height} ${calf_link_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${thigh_com_x} ${-thigh_com_y} ${thigh_com_z}"/>
+        <mass value="${thigh_mass}"/>
+        <inertia ixx="${thigh_ixx}" ixy="${thigh_ixy}" ixz="${thigh_ixz}" iyy="${thigh_iyy}" iyz="${thigh_iyz}" izz="${thigh_izz}"/>
+      </inertial>
+    </link>
+
+    <!-- calf -->
+    <joint name="FL_calf_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="0 0 -0.22"/>
+      <parent link="FL_thigh"/>
+      <child link="FL_calf"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${calf_lower}" upper="${calf_upper}" effort="${calf_effort}" velocity="${calf_velocity}"/>
+    </joint>
+
+    <link name="FL_calf">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/FL_calf.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="${calf_com_x} ${-calf_com_y} ${calf_com_z}"/>
+        <geometry>
+          <box size="${calf_width} ${calf_height} ${calf_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${calf_com_x} ${-calf_com_y} ${calf_com_z}"/>
+        <mass value="${calf_mass}"/>
+        <inertia ixx="${calf_ixx}" ixy="${calf_ixy}" ixz="${calf_ixz}" iyy="${calf_iyy}" iyz="${calf_iyz}" izz="${calf_izz}"/>
+      </inertial>
+    </link>
+
+    <joint name="FL_foot_fixed" type="fixed">
+      <origin rpy="0 0 0" xyz="-0.029481 0 -0.19799"/>
+      <parent link="FL_calf"/>
+      <child link="FL_foot"/>
+    </joint>
+    <link name="FL_foot">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/FL_foot.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.004 0.085 -0.003"/>
+        <geometry>
+          <sphere radius="${foot_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${foot_com_x} ${-foot_com_y} ${foot_com_z}"/>
+        <mass value="${foot_mass}"/>
+        <inertia ixx="${foot_ixx}" ixy="${foot_ixy}" ixz="${foot_ixz}" iyy="${foot_iyy}" iyz="${foot_iyz}" izz="${foot_izz}"/>
+      </inertial>
+    </link>
+
+  </xacro:macro>
+
+  <!-- RR: rear-right -->
+  <xacro:macro name="leg_RR" params="">
+    <joint name="RR_hip_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="-0.1666 -0.051996 0.052"/>
+      <parent link="trunk"/>
+      <child link="RR_hip"/>
+      <axis xyz="1 0 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${hip_lower}" upper="${hip_upper}" effort="${hip_effort}" velocity="${hip_velocity}"/>
+    </joint>
+
+    <link name="RR_hip">
+      <visual>
+        <origin rpy="3.141592653589793 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/RR_hip.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 ${PI/2.0} 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="${hip_length}" radius="${hip_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${hip_com_x} ${hip_com_y} ${hip_com_z}"/>
+        <mass value="${hip_mass}"/>
+        <inertia ixx="${hip_ixx}" ixy="${hip_ixy}" ixz="${hip_ixz}" iyy="${hip_iyy}" iyz="${hip_iyz}" izz="${hip_izz}"/>
+      </inertial>
+    </link>
+
+    <joint name="RR_thigh_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="-0.072 0 0"/>
+      <parent link="RR_hip"/>
+      <child link="RR_thigh"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${thigh_lower}" upper="${thigh_upper}" effort="${thigh_effort}" velocity="${thigh_velocity}"/>
+    </joint>
+
+    <link name="RR_thigh">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/RR_thigh.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="${PI/2.0} 0 0" xyz="${thigh_com_x} ${thigh_com_y} ${thigh_com_z+0.065}"/>
+        <geometry>
+          <cylinder length="${thigh_shoulder_length}" radius="${thigh_shoulder_radius}"/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin rpy="0 0 0" xyz="${thigh_com_x} ${thigh_com_y} ${thigh_com_z}"/>
+        <geometry>
+          <box size="${thigh_width} ${thigh_height} ${calf_link_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${thigh_com_x} ${thigh_com_y} ${thigh_com_z}"/>
+        <mass value="${thigh_mass}"/>
+        <inertia ixx="${thigh_ixx}" ixy="${thigh_ixy}" ixz="${thigh_ixz}" iyy="${thigh_iyy}" iyz="${thigh_iyz}" izz="${thigh_izz}"/>
+      </inertial>
+    </link>
+
+    <joint name="RR_calf_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="0 0 -0.22"/>
+      <parent link="RR_thigh"/>
+      <child link="RR_calf"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${calf_lower}" upper="${calf_upper}" effort="${calf_effort}" velocity="${calf_velocity}"/>
+    </joint>
+
+    <link name="RR_calf">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/RR_calf.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="${calf_com_x} ${calf_com_y} ${calf_com_z}"/>
+        <geometry>
+          <box size="${calf_width} ${calf_height} ${calf_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${calf_com_x} ${calf_com_y} ${calf_com_z}"/>
+        <mass value="${calf_mass}"/>
+        <inertia ixx="${calf_ixx}" ixy="${calf_ixy}" ixz="${calf_ixz}" iyy="${calf_iyy}" iyz="${calf_iyz}" izz="${calf_izz}"/>
+      </inertial>
+    </link>
+
+    <joint name="RR_foot_fixed" type="fixed">
+      <origin rpy="0 0 0" xyz="-0.029484 0 -0.19799"/>
+      <parent link="RR_calf"/>
+      <child link="RR_foot"/>
+    </joint>
+    <link name="RR_foot">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/RR_foot.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.004 -0.085 -0.003"/> 
+        <!-- RR (Right Rear) foot offset: Y is negative? -->
+        <geometry>
+          <sphere radius="${foot_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${foot_com_x} ${foot_com_y} ${foot_com_z}"/>
+        <mass value="${foot_mass}"/>
+        <inertia ixx="${foot_ixx}" ixy="${foot_ixy}" ixz="${foot_ixz}" iyy="${foot_iyy}" iyz="${foot_iyz}" izz="${foot_izz}"/>
+      </inertial>
+    </link>
+
+  </xacro:macro>
+
+  <!-- RL: rear-left -->
+  <xacro:macro name="leg_RL" params="">
+    <joint name="RL_hip_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="-0.1666 0.051996 0.052"/>
+      <parent link="trunk"/>
+      <child link="RL_hip"/>
+      <axis xyz="1 0 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${hip_lower}" upper="${hip_upper}" effort="${hip_effort}" velocity="${hip_velocity}"/>
+    </joint>
+
+    <link name="RL_hip">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/RL_hip.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 ${PI/2.0} 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="${hip_length}" radius="${hip_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${hip_com_x} ${-hip_com_y} ${hip_com_z}"/>
+        <mass value="${hip_mass}"/>
+        <inertia ixx="${hip_ixx}" ixy="${hip_ixy}" ixz="${hip_ixz}" iyy="${hip_iyy}" iyz="${hip_iyz}" izz="${hip_izz}"/>
+      </inertial>
+    </link>
+
+    <joint name="RL_thigh_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="-0.072 0 0"/>
+      <parent link="RL_hip"/>
+      <child link="RL_thigh"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${thigh_lower}" upper="${thigh_upper}" effort="${thigh_effort}" velocity="${thigh_velocity}"/>
+    </joint>
+
+    <link name="RL_thigh">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/RL_thigh.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="${PI/2.0} 0 0" xyz="${thigh_com_x} ${-thigh_com_y} ${thigh_com_z+0.065}"/>
+        <geometry>
+          <cylinder length="${thigh_shoulder_length}" radius="${thigh_shoulder_radius}"/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin rpy="0 0 0" xyz="${thigh_com_x} ${-thigh_com_y} ${thigh_com_z}"/>
+        <geometry>
+          <box size="${thigh_width} ${thigh_height} ${calf_link_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${thigh_com_x} ${-thigh_com_y} ${thigh_com_z}"/>
+        <mass value="${thigh_mass}"/>
+        <inertia ixx="${thigh_ixx}" ixy="${thigh_ixy}" ixz="${thigh_ixz}" iyy="${thigh_iyy}" iyz="${thigh_iyz}" izz="${thigh_izz}"/>
+      </inertial>
+    </link>
+
+    <joint name="RL_calf_joint" type="revolute">
+      <origin rpy="0 0 0" xyz="0 0 -0.22"/>
+      <parent link="RL_thigh"/>
+      <child link="RL_calf"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${damping}" friction="${friction}"/>
+      <limit lower="${calf_lower}" upper="${calf_upper}" effort="${calf_effort}" velocity="${calf_velocity}"/>
+    </joint>
+
+    <link name="RL_calf">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/RL_calf.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="${calf_com_x} ${-calf_com_y} ${calf_com_z}"/>
+        <geometry>
+          <box size="${calf_width} ${calf_height} ${calf_length}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${calf_com_x} ${-calf_com_y} ${calf_com_z}"/>
+        <mass value="${calf_mass}"/>
+        <inertia ixx="${calf_ixx}" ixy="${calf_ixy}" ixz="${calf_ixz}" iyy="${calf_iyy}" iyz="${calf_iyz}" izz="${calf_izz}"/>
+      </inertial>
+    </link>
+
+    <joint name="RL_foot_fixed" type="fixed">
+      <origin rpy="0 0 0" xyz="-0.029481 0 -0.19799"/>
+      <parent link="RL_calf"/>
+      <child link="RL_foot"/>
+    </joint>
+    <link name="RL_foot">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/RL_foot.STL" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.004 0.085 -0.003"/>
+        <geometry>
+          <sphere radius="${foot_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="${foot_com_x} ${foot_com_y} ${foot_com_z}"/>
+        <mass value="${foot_mass}"/>
+        <inertia ixx="${foot_ixx}" ixy="${foot_ixy}" ixz="${foot_ixz}" iyy="${foot_iyy}" iyz="${foot_iyz}" izz="${foot_izz}"/>
+      </inertial>
+    </link>
+
+  </xacro:macro>
+
+</robot>

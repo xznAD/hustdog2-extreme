@@ -66,6 +66,9 @@ class A1RoughCfg( LeggedRobotCfg ):
         penalize_contacts_on = ["thigh", "calf"]
         terminate_after_contacts_on = ["base"]#, "thigh", "calf"]
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
+
+    class terrain( LeggedRobotCfg.terrain ):
+        mesh_type = 'plane'
   
     class rewards( LeggedRobotCfg.rewards ):
         soft_dof_pos_limit = 0.9

@@ -33,6 +33,10 @@ from torch.nn.modules.activation import ReLU
 from torch.nn.modules.pooling import MaxPool2d
 from .base_config import BaseConfig
 import torch.nn as nn
+
+
+
+
 class LeggedRobotCfg(BaseConfig):
     class play:
         load_student_config = False
@@ -132,18 +136,18 @@ class LeggedRobotCfg(BaseConfig):
             height_measurements = 0.02
 
     class terrain:
-        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield高度图 or trimesh三角网格
         hf2mesh_method = "grid"  # grid or fast
-        max_error = 0.1 # for fast
+        max_error = 0.1 # for fast 高度误差
         max_error_camera = 2
 
-        y_range = [-0.4, 0.4]
+        y_range = [-0.4, 0.4] #y轴的生成范围
         
-        edge_width_thresh = 0.05
-        horizontal_scale = 0.05 # [m] influence computation time by a lot
-        horizontal_scale_camera = 0.1
-        vertical_scale = 0.005 # [m]
-        border_size = 5 # [m]
+        edge_width_thresh = 0.05 #边缘宽度阈值，单位为米，用于确定地形边缘的宽度，如果边缘宽度小于该阈值，可能会被视为不可行走区域
+        horizontal_scale = 0.05 # [m] 水平分辨率，每个网格点代表5*5influence computation time by a lot
+        horizontal_scale_camera = 0.1 #相机渲染水平分辨率
+        vertical_scale = 0.005 # [m] 垂直分辨率，每个网格点代表5mm，地形高度变化不超过5mm
+        border_size = 5 # [m]地形边缘额外的缓冲区
         height = [0.02, 0.06]
         simplify_grid = False
         gap_size = [0.02, 0.1]
@@ -164,11 +168,11 @@ class LeggedRobotCfg(BaseConfig):
 
         selected = False # select a unique terrain type and pass all arguments
         terrain_kwargs = None # Dict of arguments for selected terrain
-        max_init_terrain_level = 5 # starting curriculum state
+        max_init_terrain_level = 1 #5   starting curriculum state
         terrain_length = 18.
         terrain_width = 4
-        num_rows= 10 # number of terrain rows (levels)  # spreaded is benifitiall !
-        num_cols = 40 # number of terrain cols (types)
+        num_rows= 5 # 10  number of terrain rows (levels)  # spreaded is benifitiall !
+        num_cols = 5 # 40  number of terrain cols (types)
         
         terrain_dict = {"smooth slope": 0., 
                         "rough slope up": 0.0,
@@ -184,11 +188,11 @@ class LeggedRobotCfg(BaseConfig):
                         "platform": 0.,
                         "large stairs up": 0.,
                         "large stairs down": 0.,
-                        "parkour": 0.2,
-                        "parkour_hurdle": 0.2,
+                        "parkour": 0,
+                        "parkour_hurdle": 0,
                         "parkour_flat": 0.2,
-                        "parkour_step": 0.2,
-                        "parkour_gap": 0.2,
+                        "parkour_step": 0,
+                        "parkour_gap": 0,
                         "demo": 0.0,}
         terrain_proportions = list(terrain_dict.values())
         
@@ -199,14 +203,14 @@ class LeggedRobotCfg(BaseConfig):
         num_goals = 8
 
     class commands:
-        curriculum = False
-        max_curriculum = 1.
-        num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
+        curriculum = False #课程学习，从range到max_range
+        max_curriculum = 1. #课程学习的难度系数
+        num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (目标朝向角)
         resampling_time = 6. # time before command are changed[s]
-        heading_command = True # if true: compute ang vel command from heading error
+        heading_command = True # if true: compute ang vel command from heading error根据误差计算角速度
         
-        lin_vel_clip = 0.2
-        ang_vel_clip = 0.4
+        lin_vel_clip = 0.2#某些计算的线速度截断clip值
+        ang_vel_clip = 0.4#角速度截断clip值
         # Easy ranges
         class ranges:
             lin_vel_x = [0., 1.5] # min max [m/s]
@@ -221,13 +225,13 @@ class LeggedRobotCfg(BaseConfig):
             ang_vel_yaw = [-0, 0]    # min max [rad/s]
             heading = [-1.6, 1.6]
 
-        class crclm_incremnt:
+        class crclm_incremnt:#课程学习增量（增加范围边界）
             lin_vel_x = 0.1 # min max [m/s]
             lin_vel_y = 0.1  # min max [m/s]
             ang_vel_yaw = 0.1    # min max [rad/s]
             heading = 0.5
 
-        waypoint_delta = 0.7
+        waypoint_delta = 0.7 # waypoint之间的距离，用于计算奖励和观测
 
     class init_state:
         pos = [0.0, 0.0, 1.] # x,y,z [m]
@@ -269,22 +273,22 @@ class LeggedRobotCfg(BaseConfig):
         armature = 0.
         thickness = 0.01
 
-    class domain_rand:
-        randomize_friction = True
+    class domain_rand: #地域随机化
+        randomize_friction = True       #随机化仿真地面的摩擦系数
         friction_range = [0.6, 2.]
-        randomize_base_mass = True
-        added_mass_range = [0., 3.]
-        randomize_base_com = True
-        added_com_range = [-0.2, 0.2]
-        push_robots = True
-        push_interval_s = 8
-        max_push_vel_xy = 0.5
+        randomize_base_mass = True      #随机化狗的基座base质量（携带重物情况）
+        added_mass_range = [0., 3.]     #kg
+        randomize_base_com = True       #随机化质心位置（负载不平衡）
+        added_com_range = [-0.2, 0.2]   #m
+        push_robots = True              #是否随机推狗
+        push_interval_s = 8             #平均每隔多少秒随机推一次
+        max_push_vel_xy = 0.5           #推后导致的最大速度变化
 
-        randomize_motor = True
-        motor_strength_range = [0.8, 1.2]
+        randomize_motor = True          #电机强度（力矩）随机小或大
+        motor_strength_range = [0.8, 1.2]#电机力矩随机小或大
 
         delay_update_global_steps = 24 * 8000
-        action_delay = False
+        action_delay = False            #控制动作延时
         action_curr_step = [1, 1]
         action_curr_step_scratch = [0, 1]
         action_delay_view = 1
@@ -296,26 +300,26 @@ class LeggedRobotCfg(BaseConfig):
             tracking_goal_vel = 1.5
             tracking_yaw = 0.5
             # regularization rewards
-            lin_vel_z = -1.0
-            ang_vel_xy = -0.05
-            orientation = -1.
-            dof_acc = -2.5e-7
-            collision = -10.
-            action_rate = -0.1
-            delta_torques = -1.0e-7
-            torques = -0.00001
-            hip_pos = -0.5
-            dof_error = -0.04
-            feet_stumble = -1
-            feet_edge = -1
+            lin_vel_z = -1.0 #竖直方向线速度惩罚
+            ang_vel_xy = -0.05#角速度yaw惩罚
+            orientation = -1.#惩罚姿态偏离
+            dof_acc = -2.5e-7#关节加速度惩罚
+            collision = -10.#碰撞惩罚
+            action_rate = -0.1#动作变化率惩罚
+            delta_torques = -1.0e-7#力矩变化量惩罚
+            torques = -0.00001#力矩大小惩罚
+            hip_pos = -0.5#髋关节位置惩罚
+            dof_error = -0.04#关节位置误差惩罚
+            feet_stumble = -1#足绊倒惩罚
+            feet_edge = -1#足部边缘接触惩罚
             
-        only_positive_rewards = True # if true negative total rewards are clipped at zero (avoids early termination problems)
-        tracking_sigma = 0.2 # tracking reward = exp(-error^2/sigma)
-        soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
-        soft_dof_vel_limit = 1
-        soft_torque_limit = 0.4
-        base_height_target = 1.
-        max_contact_force = 40. # forces above this value are penalized
+        only_positive_rewards = True # 如果为True，则将负的总奖励值截断为零，避免提前终止问题
+        tracking_sigma = 0.2 # 跟踪奖励的高斯标准差参数，用于计算 exp(-error^2/sigma)
+        soft_dof_pos_limit = 1. # 软关节位置限制，相对于URDF模型限制的百分比，超过此值将受到惩罚
+        soft_dof_vel_limit = 1 # 软关节速度限制百分比，超过此值将受到惩罚
+        soft_torque_limit = 0.4# 软力矩限制百分比，超过此值将受到惩罚
+        base_height_target = 1.# 机器人基座目标高度，值为1.0米
+        max_contact_force = 40. # 最大接触力阈值，超过此值的力将被惩罚，值为40.0
 
 
 
